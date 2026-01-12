@@ -49,6 +49,87 @@ export const codeAPI = {
         const response = await api.get('/execute/submissions');
         return response.data;
     },
+
+    getStats: async () => {
+        const response = await api.get('/execute/stats');
+        return response.data;
+    },
+};
+
+// Problem Management API (Admin only)
+export const problemAPI = {
+    createProblem: async (problemData) => {
+        const response = await api.post('/problem/create-problem', problemData);
+        return response.data;
+    },
+
+    updateProblem: async (id, problemData) => {
+        const response = await api.put(`/problem/update-problem/${id}`, problemData);
+        return response.data;
+    },
+
+    getProblemForEdit: async (id) => {
+        const response = await api.get(`/problem/edit/${id}`);
+        return response.data;
+    },
+
+    createTestCase: async (testCaseData) => {
+        const response = await api.post('/problem/create-testcases', testCaseData);
+        return response.data;
+    },
+
+    updateTestCase: async (id, testCaseData) => {
+        const response = await api.put(`/problem/update-testcase/${id}`, testCaseData);
+        return response.data;
+    },
+
+    deleteTestCase: async (id) => {
+        const response = await api.delete(`/problem/delete-testcase/${id}`);
+        return response.data;
+    },
+
+    createBoilerplate: async (boilerplateData) => {
+        const response = await api.post('/problem/create-language', boilerplateData);
+        return response.data;
+    },
+
+    updateBoilerplate: async (id, boilerplateData) => {
+        const response = await api.put(`/problem/update-boilerplate/${id}`, boilerplateData);
+        return response.data;
+    },
+
+    getProblems: async () => {
+        const response = await api.get('/problem/get-problems');
+        return response.data;
+    },
+
+    getProblem: async (id) => {
+        const response = await api.get(`/problem/${id}`);
+        return response.data;
+    },
+
+    deleteProblem: async (id) => {
+        const response = await api.delete(`/problem/delete-problem/${id}`);
+        return response.data;
+    },
+};
+
+// Admin User Management API
+export const adminAPI = {
+    getAllUsers: async () => {
+        const response = await api.get('/admin/users');
+        return response.data;
+    },
+
+    updateUserRole: async (userId, role) => {
+        const response = await api.put('/admin/users/role', { userId, role });
+        return response.data;
+    },
+
+    createAdmin: async (adminData) => {
+        const response = await api.post('/admin/users/create-admin', adminData);
+        return response.data;
+    },
 };
 
 // Axios interceptor for token refresh

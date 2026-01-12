@@ -17,7 +17,7 @@ export const Refresh = async (req, res) => {
 
     const decoded = jwt.verify(
       refreshToken,
-      process.env.REFRESH_SECRET
+      process.env.REFRESH
     );
 
     const { rows } = await pool.query(
@@ -44,12 +44,17 @@ export const Refresh = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/auth/refresh',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 
     return res.status(200).json({
-      message: 'Token refreshed'
+      message: 'Token refreshed',
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: user.full_name,
+        role: user.role
+      }
     });
 
   } catch (error) {

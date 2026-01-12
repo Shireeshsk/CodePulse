@@ -10,7 +10,7 @@ export const Logout = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/auth/refresh'
+      path: '/api/auth/refresh'
     });
 
     return res.status(200).json({

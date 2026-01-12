@@ -5,13 +5,18 @@ export const getSubmissions = async (req, res) => {
         const userId = req.user.id;
         const { rows: submissions } = await pool.query(
             `SELECT 
-                code,
-                submitted_at,
-                executed_at,
+                ps.id,
+                ps.code,
+                ps.language,
+                ps.status,
+                ps.submitted_at,
+                p.title,
+                p.difficulty,
                 COUNT(*) OVER() as total
-             FROM submissions 
-             WHERE user_id = $1 
-             ORDER BY submitted_at DESC`,
+             FROM problem_submissions ps
+             JOIN problems p ON ps.problem_id = p.id
+             WHERE ps.user_id = $1 
+             ORDER BY ps.submitted_at DESC`,
             [userId]
         );
         return res.status(200).json(submissions);

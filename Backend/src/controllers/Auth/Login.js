@@ -46,7 +46,6 @@ export const Login = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/auth/refresh',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 

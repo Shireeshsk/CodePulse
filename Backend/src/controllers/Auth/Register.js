@@ -6,7 +6,7 @@ import {
 } from '../../utils/generateTokens.js';
 
 export const Register = async (req, res) => {
-  const { full_name, email, password, role = 'USER' } = req.body;
+  const { full_name, email, password, role } = req.body;
 
   try {
     const existingUser = await pool.query(
@@ -22,11 +22,17 @@ export const Register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Determine the role: only allow ADMIN if requested by an authenticated admin
+    let userRole = 'USER';
+    if (req.user && req.user.role === 'ADMIN' && role === 'ADMIN') {
+      userRole = 'ADMIN';
+    }
+
     const { rows } = await pool.query(
       `INSERT INTO users (full_name, email, password, role)
        VALUES ($1, $2, $3, $4)
        RETURNING id, full_name, email, role`,
-      [full_name, email, hashedPassword, role]
+      [full_name, email, hashedPassword, userRole]
     );
 
     const user = rows[0];
@@ -42,7 +48,6 @@ export const Register = async (req, res) => {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      path: '/auth/refresh',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 

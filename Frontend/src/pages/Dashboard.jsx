@@ -2,27 +2,40 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { codeAPI } from '../utils/api';
+import { formatProfessionalDateTime } from '../utils/formatDate';
 
 export default function Dashboard() {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const [submissions, setSubmissions] = useState([]);
+    const [statsData, setStatsData] = useState({ solvedCount: 0, acceptanceRate: 0, currentStreak: 0, totalSubmissions: 0 });
     const [loading, setLoading] = useState(true);
     const [selectedCode, setSelectedCode] = useState(null);
 
     useEffect(() => {
-        fetchSubmissions();
+        fetchData();
     }, []);
 
-    const fetchSubmissions = async () => {
+    const fetchData = async () => {
+        setLoading(true);
+
+        // Fetch Submissions
         try {
-            const data = await codeAPI.getSubmissions();
-            setSubmissions(data);
+            const submissionsData = await codeAPI.getSubmissions();
+            setSubmissions(submissionsData);
         } catch (error) {
             console.error('Error fetching submissions:', error);
-        } finally {
-            setLoading(false);
         }
+
+        // Fetch Stats
+        try {
+            const userStats = await codeAPI.getStats();
+            setStatsData(userStats);
+        } catch (error) {
+            console.error('Error fetching user stats:', error);
+        }
+
+        setLoading(false);
     };
 
     const handleLogout = async () => {
@@ -33,10 +46,10 @@ export default function Dashboard() {
     const totalSubmissions = submissions.length > 0 ? submissions[0].total : 0;
 
     const stats = [
-        { label: 'Problems Solved', value: '0', icon: 'check_circle', color: '#10b981' },
-        { label: 'Total Submissions', value: totalSubmissions, icon: 'code', color: '#137fec' },
-        { label: 'Acceptance Rate', value: '0%', icon: 'trending_up', color: '#14b8a6' },
-        { label: 'Current Streak', value: '0', icon: 'local_fire_department', color: '#f59e0b' },
+        { label: 'Problems Solved', value: statsData.solvedCount, icon: 'check_circle', color: '#10b981' },
+        { label: 'Total Submissions', value: statsData.totalSubmissions, icon: 'code', color: '#137fec' },
+        { label: 'Acceptance Rate', value: `${statsData.acceptanceRate}%`, icon: 'trending_up', color: '#14b8a6' },
+        { label: 'Current Streak', value: statsData.currentStreak, icon: 'local_fire_department', color: '#f59e0b' },
     ];
 
     return (
@@ -102,6 +115,49 @@ export default function Dashboard() {
                             <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>person</span>
                             Profile
                         </button>
+
+                        {user?.role === 'ADMIN' && (
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <button
+                                    onClick={() => navigate('/admin/problems')}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #667eea, #764ba2)',
+                                        border: 'none',
+                                        color: 'white',
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        fontWeight: 700,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>add_box</span>
+                                    Create Problem
+                                </button>
+                                <button
+                                    onClick={() => navigate('/admin/users')}
+                                    style={{
+                                        background: 'linear-gradient(135deg, #f59e0b, #d97706)',
+                                        border: 'none',
+                                        color: 'white',
+                                        padding: '10px 16px',
+                                        borderRadius: '8px',
+                                        fontSize: '14px',
+                                        fontWeight: 700,
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '6px',
+                                        cursor: 'pointer'
+                                    }}
+                                >
+                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>group</span>
+                                    Users
+                                </button>
+                            </div>
+                        )}
 
                         <button
                             onClick={handleLogout}
@@ -206,11 +262,22 @@ export default function Dashboard() {
                         </div>
 
                         <div
+                            onClick={() => navigate('/problems')}
                             style={{
                                 background: '#161b22',
                                 border: '1px solid #30363d',
                                 borderRadius: '12px',
-                                padding: '32px'
+                                padding: '32px',
+                                cursor: 'pointer',
+                                transition: 'all 0.3s ease'
+                            }}
+                            onMouseEnter={(e) => {
+                                e.currentTarget.style.borderColor = '#10b981';
+                                e.currentTarget.style.transform = 'scale(1.02)';
+                            }}
+                            onMouseLeave={(e) => {
+                                e.currentTarget.style.borderColor = '#30363d';
+                                e.currentTarget.style.transform = 'scale(1)';
                             }}
                         >
                             <span className="material-symbols-outlined" style={{ fontSize: '40px', color: '#10b981', marginBottom: '16px' }}>
@@ -222,20 +289,6 @@ export default function Dashboard() {
                             <p style={{ color: '#94a3b8', fontSize: '14px' }}>
                                 Explore curated problem sets ranging from easy to hard difficulty levels.
                             </p>
-                            <button
-                                style={{
-                                    marginTop: '16px',
-                                    background: 'transparent',
-                                    border: '1px solid #30363d',
-                                    color: '#10b981',
-                                    padding: '8px 16px',
-                                    borderRadius: '6px',
-                                    fontSize: '13px',
-                                    fontWeight: 600
-                                }}
-                            >
-                                Coming Soon
-                            </button>
                         </div>
                     </div>
                 </div>
@@ -282,41 +335,101 @@ export default function Dashboard() {
                             </div>
                         ) : (
                             <div style={{ overflowX: 'auto' }}>
-                                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                                <table style={{ width: '100%', borderCollapse: 'separate', borderSpacing: 0 }}>
                                     <thead>
-                                        <tr style={{ borderBottom: '1px solid #30363d' }}>
-                                            <th style={{ padding: '16px', textAlign: 'left', color: '#94a3b8', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Submitted At</th>
-                                            <th style={{ padding: '16px', textAlign: 'left', color: '#94a3b8', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Executed At</th>
-                                            <th style={{ padding: '16px', textAlign: 'center', color: '#94a3b8', fontSize: '12px', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.5px' }}>Action</th>
+                                        <tr style={{ background: '#1c2128' }}>
+                                            <th style={{ padding: '16px 24px', textAlign: 'left', color: '#8b949e', fontSize: '13px', fontWeight: 600 }}>Problem</th>
+                                            <th style={{ padding: '16px 24px', textAlign: 'left', color: '#8b949e', fontSize: '13px', fontWeight: 600 }}>Status</th>
+                                            <th style={{ padding: '16px 24px', textAlign: 'left', color: '#8b949e', fontSize: '13px', fontWeight: 600 }}>Language</th>
+                                            <th style={{ padding: '16px 24px', textAlign: 'left', color: '#8b949e', fontSize: '13px', fontWeight: 600 }}>Time</th>
+                                            <th style={{ padding: '16px 24px', textAlign: 'right', color: '#8b949e', fontSize: '13px', fontWeight: 600 }}>Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
                                         {submissions.map((submission, index) => (
-                                            <tr key={index} style={{ borderBottom: '1px solid #30363d' }}>
-                                                <td style={{ padding: '16px', color: '#e2e8f0', fontSize: '14px' }}>
-                                                    {submission.submitted_at ? new Date(submission.submitted_at).toLocaleString() : 'N/A'}
+                                            <tr key={index} style={{
+                                                borderBottom: '1px solid #30363d',
+                                                transition: 'background 0.2s ease',
+                                                ':hover': { background: '#21262d' }
+                                            }}
+                                                className="submission-row">
+                                                <td style={{ padding: '20px 24px' }}>
+                                                    <div style={{ fontWeight: 700, color: 'white', marginBottom: '4px' }}>{submission.title}</div>
+                                                    <div style={{
+                                                        fontSize: '11px',
+                                                        fontWeight: 700,
+                                                        color: submission.difficulty === 'EASY' ? '#00b8a3' : submission.difficulty === 'MEDIUM' ? '#ffb800' : '#ff375f',
+                                                        display: 'inline-flex',
+                                                        alignItems: 'center',
+                                                        gap: '4px'
+                                                    }}>
+                                                        <span style={{
+                                                            width: '6px',
+                                                            height: '6px',
+                                                            borderRadius: '50%',
+                                                            background: 'currentColor'
+                                                        }}></span>
+                                                        {submission.difficulty}
+                                                    </div>
                                                 </td>
-                                                <td style={{ padding: '16px', color: '#e2e8f0', fontSize: '14px' }}>
-                                                    {submission.executed_at ? new Date(submission.executed_at).toLocaleString() : 'N/A'}
+                                                <td style={{ padding: '20px 24px' }}>
+                                                    <div style={{
+                                                        color: submission.status === 'ACCEPTED' ? '#10b981' : '#ef4444',
+                                                        fontSize: '14px',
+                                                        fontWeight: 700,
+                                                        display: 'flex',
+                                                        alignItems: 'center',
+                                                        gap: '6px'
+                                                    }}>
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>
+                                                            {submission.status === 'ACCEPTED' ? 'check_circle' : 'error'}
+                                                        </span>
+                                                        {submission.status}
+                                                    </div>
                                                 </td>
-                                                <td style={{ padding: '16px', textAlign: 'center' }}>
+                                                <td style={{ padding: '20px 24px' }}>
+                                                    <span style={{
+                                                        background: '#161b22',
+                                                        border: '1px solid #30363d',
+                                                        padding: '4px 10px',
+                                                        borderRadius: '6px',
+                                                        fontSize: '12px',
+                                                        color: '#c9d1d9',
+                                                        fontWeight: 500
+                                                    }}>
+                                                        {submission.language}
+                                                    </span>
+                                                </td>
+                                                <td style={{ padding: '20px 24px', color: '#8b949e', fontSize: '13px' }}>
+                                                    {formatProfessionalDateTime(submission.submitted_at)}
+                                                </td>
+                                                <td style={{ padding: '20px 24px', textAlign: 'right' }}>
                                                     <button
                                                         onClick={() => setSelectedCode(submission.code)}
                                                         style={{
-                                                            background: '#137fec',
-                                                            border: 'none',
-                                                            color: 'white',
-                                                            padding: '8px 16px',
+                                                            background: 'transparent',
+                                                            border: '1px solid #30363d',
+                                                            color: '#c9d1d9',
+                                                            padding: '6px 14px',
                                                             borderRadius: '6px',
                                                             fontSize: '13px',
                                                             fontWeight: 600,
                                                             cursor: 'pointer',
+                                                            transition: 'all 0.2s ease',
                                                             display: 'inline-flex',
                                                             alignItems: 'center',
                                                             gap: '6px'
                                                         }}
+                                                        onMouseEnter={(e) => {
+                                                            e.currentTarget.style.background = '#30363d';
+                                                            e.currentTarget.style.color = 'white';
+                                                        }}
+                                                        onMouseLeave={(e) => {
+                                                            e.currentTarget.style.background = 'transparent';
+                                                            e.currentTarget.style.color = '#c9d1d9';
+                                                        }}
                                                     >
-                                                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>code</span>
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>visibility</span>
                                                         View Code
                                                     </button>
                                                 </td>

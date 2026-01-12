@@ -1,14 +1,59 @@
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { codeAPI } from '../utils/api';
+import { formatProfessionalDate } from '../utils/formatDate';
 
 export default function Profile() {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
+    const [stats, setStats] = useState(null);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchStats = async () => {
+            try {
+                const data = await codeAPI.getStats();
+                setStats(data);
+            } catch (error) {
+                console.error('Error fetching user stats:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+        fetchStats();
+    }, []);
 
     const handleLogout = async () => {
         await logout();
         navigate('/');
     };
+
+    // Helper to generate the last 365 days of activity for the heatmap
+    const generateActivityGrid = () => {
+        if (!stats?.activity) return null;
+
+        const activityMap = stats.activity.reduce((acc, curr) => {
+            const dateStr = new Date(curr.date).toISOString().split('T')[0];
+            acc[dateStr] = curr.count;
+            return acc;
+        }, {});
+
+        const today = new Date();
+        const days = [];
+        for (let i = 364; i >= 0; i--) {
+            const d = new Date(today);
+            d.setDate(d.getDate() - i);
+            const dateStr = d.toISOString().split('T')[0];
+            days.push({
+                date: dateStr,
+                count: activityMap[dateStr] || 0
+            });
+        }
+        return days;
+    };
+
+    const activityDays = generateActivityGrid();
 
     return (
         <div style={{ minHeight: '100vh', background: '#0a0a0a' }}>
@@ -144,7 +189,7 @@ export default function Profile() {
                             <div style={{ display: 'flex', gap: '12px', fontSize: '13px', color: '#64748b' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
                                     <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>calendar_today</span>
-                                    Joined {user?.created_at ? new Date(user.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) : 'Recently'}
+                                    Joined {user?.created_at ? formatProfessionalDate(user.created_at) : 'Recently'}
                                 </div>
                             </div>
                         </div>
@@ -214,17 +259,79 @@ export default function Profile() {
 
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             {[
-                                { label: 'Total Submissions', value: '0', color: '#137fec' },
-                                { label: 'Accepted', value: '0', color: '#10b981' },
-                                { label: 'Failed', value: '0', color: '#ef4444' },
-                                { label: 'Success Rate', value: '0%', color: '#14b8a6' },
+                                { label: 'Total Submissions', value: stats?.totalSubmissions || 0, color: '#137fec' },
+                                { label: 'Accepted', value: stats?.acceptedSubmissions || 0, color: '#10b981' },
+                                { label: 'Failed', value: stats?.failedSubmissions || 0, color: '#ef4444' },
+                                { label: 'Success Rate', value: `${stats?.acceptanceRate || 0}%`, color: '#14b8a6' },
                             ].map((stat, i) => (
                                 <div key={i} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                     <span style={{ color: '#94a3b8', fontSize: '14px' }}>{stat.label}</span>
-                                    <span style={{ color: stat.color, fontSize: '18px', fontWeight: 700 }}>{stat.value}</span>
+                                    <span style={{ color: stat.color, fontSize: '18px', fontWeight: 700 }}>{stat.value || 0}</span>
                                 </div>
                             ))}
                         </div>
+                    </div>
+                </div>
+
+                {/* Activity Heatmap */}
+                <div style={{
+                    background: '#161b22',
+                    border: '1px solid #30363d',
+                    borderRadius: '12px',
+                    padding: '32px',
+                    marginBottom: '32px'
+                }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                        <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'white', display: 'flex', alignItems: 'center', gap: '8px', margin: 0 }}>
+                            <span className="material-symbols-outlined" style={{ color: '#f59e0b' }}>history</span>
+                            Submissions in the last year
+                        </h2>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', fontSize: '12px', color: '#64748b' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ width: '10px', height: '10px', background: '#1e1e1e', borderRadius: '2px' }}></div>
+                                No activity
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                <div style={{ width: '10px', height: '10px', background: '#137fec', borderRadius: '2px' }}></div>
+                                Active
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style={{
+                        display: 'grid',
+                        gridTemplateColumns: 'repeat(53, 1fr)',
+                        gap: '4px',
+                        overflowX: 'auto',
+                        padding: '4px'
+                    }}>
+                        {activityDays?.map((day, i) => (
+                            <div
+                                key={i}
+                                title={`${day.count} submissions on ${day.date}`}
+                                style={{
+                                    width: '100%',
+                                    aspectRatio: '1',
+                                    background: day.count > 0 ? `rgba(19, 127, 236, ${Math.min(0.2 + (day.count * 0.2), 1)})` : '#1e1e1e',
+                                    borderRadius: '2px',
+                                    border: day.count > 4 ? '1px solid #137fec' : 'none',
+                                    transition: 'all 0.2s ease',
+                                    cursor: 'pointer'
+                                }}
+                                onMouseEnter={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1.2)';
+                                    e.currentTarget.style.zIndex = '1';
+                                }}
+                                onMouseLeave={(e) => {
+                                    e.currentTarget.style.transform = 'scale(1)';
+                                    e.currentTarget.style.zIndex = '0';
+                                }}
+                            ></div>
+                        ))}
+                    </div>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '12px', color: '#64748b', fontSize: '11px' }}>
+                        <span>Year Ago</span>
+                        <span>Today</span>
                     </div>
                 </div>
 

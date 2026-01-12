@@ -77,12 +77,15 @@ export async function executeInDocker(language, filepath, input = "") {
             return reject("⏱️ Execution Timeout");
           }
 
+          // If there's an error, use stderr for error message
           return reject(
             `❌ Runtime Error: ${cleanErrorMsg(stderr || error.message)}`
           );
         }
 
-        resolve(stdout?.trim() || stderr?.trim() || "[No output]");
+        // If no error, only return stdout (ignore stderr warnings/debug info)
+        // Don't treat stderr as valid output - it typically contains warnings
+        resolve(stdout?.trim() || "");
       }
     );
 
