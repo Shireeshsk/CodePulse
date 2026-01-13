@@ -54,6 +54,20 @@ const AdminUsers = () => {
         }
     };
 
+    const handleDeleteUser = async (userId, userName) => {
+        if (!window.confirm(`Are you sure you want to delete ${userName}? This action cannot be undone.`)) {
+            return;
+        }
+
+        try {
+            await adminAPI.deleteUser(userId);
+            toast.success('User deleted successfully');
+            fetchUsers();
+        } catch (err) {
+            toast.error(err.response?.data?.message || 'Failed to delete user');
+        }
+    };
+
     if (currentUser?.role !== 'ADMIN') return <div className="admin-problems-container">Access Denied</div>;
 
     return (
@@ -89,6 +103,7 @@ const AdminUsers = () => {
                                         <th style={{ padding: '1.25rem', color: 'var(--text-dim)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Current Role</th>
                                         <th style={{ padding: '1.25rem', color: 'var(--text-dim)', fontSize: '0.8rem', textTransform: 'uppercase' }}>Joined Date</th>
                                         <th style={{ padding: '1.25rem', color: 'var(--text-dim)', fontSize: '0.8rem', textTransform: 'uppercase', textAlign: 'center' }}>Modify Role</th>
+                                        <th style={{ padding: '1.25rem', color: 'var(--text-dim)', fontSize: '0.8rem', textTransform: 'uppercase', textAlign: 'center' }}>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -122,6 +137,27 @@ const AdminUsers = () => {
                                                     </select>
                                                 ) : (
                                                     <span style={{ color: 'var(--text-dim)', fontSize: '0.8rem', fontStyle: 'italic' }}>Active Session</span>
+                                                )}
+                                            </td>
+                                            <td style={{ padding: '1.25rem', textAlign: 'center' }}>
+                                                {u.id !== currentUser.id && (
+                                                    <button
+                                                        onClick={() => handleDeleteUser(u.id, u.full_name)}
+                                                        style={{
+                                                            background: 'transparent',
+                                                            border: 'none',
+                                                            color: '#ef4444',
+                                                            cursor: 'pointer',
+                                                            padding: '4px',
+                                                            display: 'flex',
+                                                            alignItems: 'center',
+                                                            justifyContent: 'center',
+                                                            margin: '0 auto'
+                                                        }}
+                                                        title="Delete User"
+                                                    >
+                                                        <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>delete</span>
+                                                    </button>
                                                 )}
                                             </td>
                                         </tr>

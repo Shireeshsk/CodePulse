@@ -24,6 +24,13 @@ export const Login = async (req, res) => {
 
     const user = rows[0];
 
+    // If user has no password, they likely registered via Google
+    if (!user.password) {
+      return res.status(401).json({
+        message: 'This account was created using Google. Please use "Continue with Google" to login.'
+      });
+    }
+
     const isMatch = await bcrypt.compare(password, user.password);
 
     if (!isMatch) {
@@ -38,14 +45,14 @@ export const Login = async (req, res) => {
     res.cookie('access_token', accessToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 15 * 60 * 1000
     });
 
     res.cookie('refresh_token', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
+      sameSite: 'lax',
       maxAge: 7 * 24 * 60 * 60 * 1000
     });
 

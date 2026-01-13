@@ -7,6 +7,7 @@ import { router as AuthRoutes } from './routes/AuthRoutes.js'
 import { router as executionRoutes } from './routes/ExecutionRoutes.js'
 import { router as problemRoutes } from './routes/ProblemRoutes.js'
 import { router as adminRoutes } from './routes/AdminRoutes.js'
+import passport from './config/passport.js'
 
 const app = express();
 const port = process.env.PORT
@@ -18,6 +19,7 @@ app.use(cors({
     credentials: true
 }))
 app.use(cookieParser());
+app.use(passport.initialize());
 
 app.use('/api/auth', AuthRoutes)
 app.use('/api/execute', executionRoutes)

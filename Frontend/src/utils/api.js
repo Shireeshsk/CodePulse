@@ -36,6 +36,21 @@ export const authAPI = {
         const response = await api.get('/auth/me');
         return response.data;
     },
+
+    forgotPassword: async (email) => {
+        const response = await api.post('/auth/forgot-password', { email });
+        return response.data;
+    },
+
+    verifyOTP: async (email, otp) => {
+        const response = await api.post('/auth/verify-otp', { email, otp });
+        return response.data;
+    },
+
+    resetPassword: async (resetToken, newPassword) => {
+        const response = await api.post('/auth/reset-password', { resetToken, newPassword });
+        return response.data;
+    },
 };
 
 // Code Execution API
@@ -128,6 +143,11 @@ export const adminAPI = {
 
     createAdmin: async (adminData) => {
         const response = await api.post('/admin/users/create-admin', adminData);
+        return response.data;
+    },
+
+    deleteUser: async (id) => {
+        const response = await api.delete(`/admin/users/${id}`);
         return response.data;
     },
 };

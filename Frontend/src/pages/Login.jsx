@@ -120,6 +120,11 @@ export default function Login() {
                                 fontSize: '14px'
                             }}
                         />
+                        <div style={{ textAlign: 'right', marginTop: '8px' }}>
+                            <Link to="/forgot-password" style={{ color: '#137fec', textDecoration: 'none', fontSize: '12px', fontWeight: 500 }}>
+                                Forgot Password?
+                            </Link>
+                        </div>
                     </div>
 
                     <button
@@ -150,6 +155,39 @@ export default function Login() {
                         )}
                     </button>
                 </form>
+
+                <div style={{ margin: '20px 0', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(59, 71, 84, 0.3)' }}></div>
+                    <span style={{ color: '#64748b', fontSize: '12px' }}>OR</span>
+                    <div style={{ flex: 1, height: '1px', background: 'rgba(59, 71, 84, 0.3)' }}></div>
+                </div>
+
+                <button
+                    onClick={() => window.location.href = 'http://localhost:5000/api/auth/google'}
+                    style={{
+                        width: '100%',
+                        padding: '12px',
+                        background: 'transparent',
+                        border: '1px solid #30363d',
+                        color: 'white',
+                        borderRadius: '8px',
+                        fontSize: '14px',
+                        fontWeight: 600,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '12px',
+                        cursor: 'pointer'
+                    }}
+                >
+                    <svg width="18" height="18" viewBox="0 0 18 18">
+                        <path d="M17.64 9.2c0-.637-.057-1.251-.164-1.84H9v3.481h4.844c-.209 1.125-.843 2.078-1.796 2.717v2.257h2.908c1.702-1.567 2.684-3.874 2.684-6.615z" fill="#4285F4" />
+                        <path d="M9 18c2.43 0 4.467-.806 5.956-2.186l-2.908-2.257c-.806.54-1.836.86-3.048.86-2.344 0-4.328-1.584-5.036-3.711H.957v2.332A8.997 8.997 0 009 18z" fill="#34A853" />
+                        <path d="M3.964 10.712c-.18-.54-.282-1.117-.282-1.712s.102-1.172.282-1.712V4.956H.957C.347 6.173 0 7.548 0 9s.347 2.827.957 4.044l3.007-2.332z" fill="#FBBC05" />
+                        <path d="M9 3.58c1.321 0 2.508.454 3.44 1.345l2.582-2.58C13.463.891 11.426 0 9 0 5.482 0 2.443 2.017.957 4.956l3.007 2.332c.708-2.127 2.692-3.711 5.036-3.711z" fill="#EA4335" />
+                    </svg>
+                    Continue with Google
+                </button>
 
                 <div style={{
                     marginTop: '24px',

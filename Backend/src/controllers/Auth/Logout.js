@@ -3,14 +3,13 @@ export const Logout = async (req, res) => {
     res.clearCookie('access_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict'
+      sameSite: 'lax'
     });
 
     res.clearCookie('refresh_token', {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'strict',
-      path: '/api/auth/refresh'
+      sameSite: 'lax'
     });
 
     return res.status(200).json({
