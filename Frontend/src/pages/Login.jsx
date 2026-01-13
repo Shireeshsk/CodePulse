@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-
+const API_AUTH_URL = import.meta.env.VITE_AUTH_URL;
 export default function Login() {
     const navigate = useNavigate();
     const { login } = useAuth();
@@ -163,7 +163,7 @@ export default function Login() {
                 </div>
 
                 <button
-                    onClick={() => window.location.href = 'http://localhost:5000/api/auth/google'}
+                    onClick={() => window.location.href = API_AUTH_URL}
                     style={{
                         width: '100%',
                         padding: '12px',

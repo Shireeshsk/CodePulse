@@ -3,7 +3,7 @@ import { generateAccessToken, generateRefreshToken } from "../../utils/generateT
 export const GoogleAuthCallback = async (req, res) => {
     try {
         if (!req.user) {
-            return res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`);
+            return res.redirect(`${process.env.FRONTEND_URL}/login`);
         }
 
         const user = req.user;
@@ -26,9 +26,9 @@ export const GoogleAuthCallback = async (req, res) => {
         });
 
         // Redirect to dashboard
-        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/dashboard`);
+        res.redirect(`${process.env.FRONTEND_URL}/dashboard`);
     } catch (err) {
         console.error('Google Auth Error:', err);
-        res.redirect(`${process.env.FRONTEND_URL || 'http://localhost:5173'}/login`);
+        res.redirect(`${process.env.FRONTEND_URL}/login`);
     }
 }

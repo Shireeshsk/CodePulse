@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = import.meta.env.VITE_BACKEND_URL;
 
 const api = axios.create({
     baseURL: API_BASE_URL,
@@ -148,6 +148,14 @@ export const adminAPI = {
 
     deleteUser: async (id) => {
         const response = await api.delete(`/admin/users/${id}`);
+        return response.data;
+    },
+};
+
+// Feedback API
+export const feedbackAPI = {
+    submitFeedback: async (feedbackData) => {
+        const response = await api.post('/feedback/submit', feedbackData);
         return response.data;
     },
 };

@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { codeAPI } from '../utils/api';
+import { codeAPI, feedbackAPI } from '../utils/api';
 import { formatProfessionalDate } from '../utils/formatDate';
 
 export default function Profile() {
@@ -9,6 +9,13 @@ export default function Profile() {
     const { user, logout } = useAuth();
     const [stats, setStats] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // Feedback State
+    const [rating, setRating] = useState(0);
+    const [hoverRating, setHoverRating] = useState(0);
+    const [feedbackText, setFeedbackText] = useState('');
+    const [submitting, setSubmitting] = useState(false);
+    const [submissionStatus, setSubmissionStatus] = useState(null); // { type: 'success' | 'error', message: string }
 
     useEffect(() => {
         const fetchStats = async () => {
@@ -27,6 +34,37 @@ export default function Profile() {
     const handleLogout = async () => {
         await logout();
         navigate('/');
+    };
+
+    const handleSubmitFeedback = async (e) => {
+        e.preventDefault();
+        if (rating === 0) {
+            setSubmissionStatus({ type: 'error', message: 'Please select a star rating' });
+            return;
+        }
+
+        setSubmitting(true);
+        setSubmissionStatus(null);
+
+        try {
+            const data = await feedbackAPI.submitFeedback({
+                rating,
+                feedback: feedbackText
+            });
+            setSubmissionStatus({ type: 'success', message: data.message });
+            setRating(0);
+            setFeedbackText('');
+        } catch (error) {
+            console.error('Feedback submission error:', error);
+            setSubmissionStatus({
+                type: 'error',
+                message: error.response?.data?.message || 'Failed to submit feedback. Please try again later.'
+            });
+        } finally {
+            setSubmitting(false);
+            // Clear status after 5 seconds
+            setTimeout(() => setSubmissionStatus(null), 5000);
+        }
     };
 
     // Helper to generate the last 365 days of activity for the heatmap
@@ -333,6 +371,148 @@ export default function Profile() {
                         <span>Year Ago</span>
                         <span>Today</span>
                     </div>
+                </div>
+
+                {/* Rating & Feedback Section */}
+                <div style={{
+                    background: '#161b22',
+                    border: '1px solid #30363d',
+                    borderRadius: '12px',
+                    padding: '32px',
+                    marginBottom: '32px'
+                }}>
+                    <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'white', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+                        <span className="material-symbols-outlined" style={{ color: '#ffc107' }}>grade</span>
+                        Rate Your Experience
+                    </h2>
+                    <p style={{ color: '#94a3b8', fontSize: '14px', marginBottom: '24px' }}>
+                        We'd love to hear your thoughts! Rate CodePulse and let us know how we can improve.
+                    </p>
+
+                    <form onSubmit={handleSubmitFeedback}>
+                        <div style={{ marginBottom: '24px' }}>
+                            <div style={{ display: 'flex', gap: '8px', marginBottom: '12px' }}>
+                                {[1, 2, 3, 4, 5].map((star) => (
+                                    <button
+                                        key={star}
+                                        type="button"
+                                        onClick={() => setRating(star)}
+                                        onMouseEnter={() => setHoverRating(star)}
+                                        onMouseLeave={() => setHoverRating(0)}
+                                        style={{
+                                            background: 'transparent',
+                                            border: 'none',
+                                            cursor: 'pointer',
+                                            padding: 0,
+                                            transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1)',
+                                            transform: (hoverRating || rating) >= star ? 'scale(1.2)' : 'scale(1)',
+                                        }}
+                                    >
+                                        <span
+                                            className="material-symbols-outlined"
+                                            style={{
+                                                fontSize: '36px',
+                                                fontVariationSettings: (hoverRating || rating) >= star ? "'FILL' 1" : "'FILL' 0",
+                                                color: (hoverRating || rating) >= star ? '#ffc107' : '#30363d'
+                                            }}
+                                        >
+                                            star
+                                        </span>
+                                    </button>
+                                ))}
+                            </div>
+                            <span style={{
+                                fontSize: '13px',
+                                color: rating > 0 ? '#137fec' : '#64748b',
+                                fontWeight: 600
+                            }}>
+                                {rating === 5 ? 'Excellent!' :
+                                    rating === 4 ? 'Great!' :
+                                        rating === 3 ? 'Good' :
+                                            rating === 2 ? 'Fair' :
+                                                rating === 1 ? 'Poor' : 'Select a rating'}
+                            </span>
+                        </div>
+
+                        <div style={{ marginBottom: '24px' }}>
+                            <label style={{ display: 'block', color: '#e2e8f0', fontSize: '14px', fontWeight: 600, marginBottom: '8px' }}>
+                                Suggestions or Complaints
+                            </label>
+                            <textarea
+                                value={feedbackText}
+                                onChange={(e) => setFeedbackText(e.target.value)}
+                                placeholder="Tell us what you like or what we can improve..."
+                                style={{
+                                    width: '100%',
+                                    minHeight: '120px',
+                                    background: '#0d1117',
+                                    border: '1px solid #30363d',
+                                    borderRadius: '8px',
+                                    padding: '12px 16px',
+                                    color: 'white',
+                                    fontSize: '14px',
+                                    lineHeight: '1.6',
+                                    outline: 'none',
+                                    resize: 'vertical',
+                                    transition: 'border-color 0.2s',
+                                }}
+                                onFocus={(e) => e.target.style.borderColor = '#137fec'}
+                                onBlur={(e) => e.target.style.borderColor = '#30363d'}
+                            />
+                        </div>
+
+                        {submissionStatus && (
+                            <div style={{
+                                padding: '12px 16px',
+                                borderRadius: '8px',
+                                marginBottom: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '10px',
+                                background: submissionStatus.type === 'success' ? '#065f4626' : '#991b1b26',
+                                border: `1px solid ${submissionStatus.type === 'success' ? '#0596694d' : '#dc26264d'}`,
+                                color: submissionStatus.type === 'success' ? '#34d399' : '#f87171',
+                                fontSize: '14px'
+                            }}>
+                                <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>
+                                    {submissionStatus.type === 'success' ? 'check_circle' : 'error'}
+                                </span>
+                                {submissionStatus.message}
+                            </div>
+                        )}
+
+                        <button
+                            type="submit"
+                            disabled={submitting}
+                            style={{
+                                background: '#137fec',
+                                border: 'none',
+                                color: 'white',
+                                padding: '12px 24px',
+                                borderRadius: '8px',
+                                fontSize: '14px',
+                                fontWeight: 700,
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                cursor: submitting ? 'not-allowed' : 'pointer',
+                                opacity: submitting ? 0.7 : 1,
+                                transition: 'all 0.2s ease',
+                            }}
+                        >
+                            {submitting ? (
+                                <>
+                                    <span className="material-symbols-outlined rotating" style={{ fontSize: '18px' }}>sync</span>
+                                    Submitting...
+                                </>
+                            ) : (
+                                <>
+                                    <span className="material-symbols-outlined" style={{ fontSize: '18px' }}>send</span>
+                                    Submit Feedback
+                                </>
+                            )}
+                        </button>
+                    </form>
                 </div>
 
                 {/* Actions */}

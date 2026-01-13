@@ -7,7 +7,7 @@ config();
 passport.use(new GoogleStrategy({
     clientID: process.env.GOOGLE_CLIENT_ID,
     clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-    callbackURL: process.env.GOOGLE_CALLBACK_URL 
+    callbackURL: process.env.GOOGLE_CALLBACK_URL
 },
     async (accessToken, refreshToken, profile, done) => {
         try {
@@ -27,7 +27,6 @@ passport.use(new GoogleStrategy({
                 user = result.rows[0];
             } else {
                 user = rows[0];
-                // Optionally update image_url if it changed
                 if (imageUrl && user.image_url !== imageUrl) {
                     await pool.query('UPDATE users SET image_url = $1 WHERE id = $2', [imageUrl, user.id]);
                     user.image_url = imageUrl;
